@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <glib.h>
 
 volatile int loop = 0;
 
@@ -98,7 +99,8 @@ int syncml_obex_send_req () {
     obex_headerdata_t hd;
     obex_interface_t *obex_intf;
     int size;
-    int i, num_interfaces;
+    int i, num;
+    wchar_t peninfo[32];
 
     if (!handle) {
         handle = OBEX_Init(OBEX_TRANS_USB, obex_event, 0);
@@ -108,8 +110,8 @@ int syncml_obex_send_req () {
             perror("handle");
         OBEX_SetUserData(handle, &state);
         
-        num_interfaces = OBEX_EnumerateInterfaces(handle);
-        for (i=0; i<num_interfaces; i++) {
+        num = OBEX_EnumerateInterfaces(handle);
+        for (i=0; i<num; i++) {
             obex_intf = OBEX_GetInterfaceByIndex(handle, i);
             if (obex_intf->usb.idVendor == 0x1cfb &&
                 obex_intf->usb.idProduct == 0x1020)
@@ -118,7 +120,7 @@ int syncml_obex_send_req () {
                 break;
             }
         }
-        if (i == num_interfaces) {
+        if (i == num) {
             return 0;
         }
 
@@ -143,8 +145,13 @@ int syncml_obex_send_req () {
     size = 4;
     OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION, hd, size, OBEX_FL_FIT_ONE_PACKET);
     
-    hd.bs = "\0p\0e\0n\0i\0n\0f\0o\0";
-    size = 16;
+    hd.bs = g_utf8_to_utf16("peninfo", strlen("peninfo"), NULL, &num, NULL);
+
+    for (i=0; i<num; i++) {
+        uint16_t *wchar = &hd.bs[i*2];
+        *wchar = ntohs(*wchar);
+    }
+    size = (num+1) * sizeof(uint16_t);
     OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_NAME, hd, size, OBEX_FL_FIT_ONE_PACKET);
     
     if (OBEX_Request(handle, obj) < 0)
