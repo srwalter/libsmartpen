@@ -1,5 +1,8 @@
-#include <bluetooth/bluetooth.h>
 #include <openobex/obex.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 volatile int loop = 0;
 
@@ -10,8 +13,6 @@ typedef struct {
     char *body;
     
 } obex_state;
-
-static obex_t *handle = NULL;
 
 static void obex_requestdone (obex_state *state, obex_t *hdl,
                               obex_object_t *obj, int cmd, int resp)
@@ -30,8 +31,8 @@ static void obex_requestdone (obex_state *state, obex_t *hdl,
                 /* Get the connection identifier */
                 printf("header %x\n", header_id);
                 if (header_id == OBEX_HDR_CONNECTION) {
-                    //memcpy(&state->connid, &hdata, 4);
-                    printf("conn id: %d\n", hdata);
+                    memcpy(&state->connid, &hdata, 4);
+                    printf("conn id: %d\n", state->connid);
                 }
             }
             break;
@@ -89,66 +90,45 @@ static void obex_event (obex_t *hdl, obex_object_t *obj, int mode,
     }
 }
 
-void syncml_obex_recv (obex_t *handle) {
-    obex_object_t *obj;
-    obex_headerdata_t hdata;
-    uint32_t hlen;
-    char *mimetype = "application/vnd.syncml+wbxml"; /* FIXME */
-
-    printf("receiving!\n");
-
-    obj = OBEX_ObjectNew(handle, OBEX_CMD_GET);
-    OBEX_Request(handle, obj);
-    //hdata.bs = obstate->connid;
-    //hlen = strlen(obstate->connid);
-    //OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION, hdata, hlen, 0);
-    
-    hdata.bs = mimetype;
-    hlen = strlen(mimetype);
-    OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_TYPE, hdata, hlen, 0);
-    OBEX_HandleInput(handle, 0);
-    
-    /* do stuff with handle->body */
-}
-
-/* only needed as server */
-/*
-int syncml_obex_send_rsp (syncml_state *state, char *data, int len,
-                          int code, char *contenttype) {
-    g_assert_not_reached();
-    return -1;
-}*/
-
 int syncml_obex_send_req (char *data, int len,
                           char *cmd, char *contenttype) {
     obex_t *handle = NULL;
     obex_object_t *obj;
     obex_state state;
     obex_headerdata_t hd;
+    obex_interface_t *obex_intf;
     int size;
+    int i, num_interfaces;
 
     if (!handle) {
-        bdaddr_t dest;
-        uint8_t channel = 6;
-
-        handle = OBEX_Init(OBEX_TRANS_BLUETOOTH, obex_event, 0);
+        handle = OBEX_Init(OBEX_TRANS_USB, obex_event, 0);
         state.handle = handle;
         state.body = NULL;
         if (!handle)
             perror("handle");
         OBEX_SetUserData(handle, &state);
         
-        if (BtOBEX_TransportConnect(handle, BDADDR_ANY, &dest, channel) < 0) {
-            printf("connect\n");
-            return -1;
+        num_interfaces = OBEX_EnumerateInterfaces(handle);
+        for (i=0; i<num_interfaces; i++) {
+            obex_intf = OBEX_GetInterfaceByIndex(handle, i);
+            if (obex_intf->usb.idVendor == 0x1cfb &&
+                obex_intf->usb.idProduct == 0x1020)
+            {
+                printf("Found Livescribe Pulse pen\n");
+                break;
+            }
         }
+        if (i == num_interfaces) {
+            return 0;
+        }
+
+        i = OBEX_InterfaceConnect(handle, obex_intf);
+        printf("connect = %d\n", i);
+
         obj = OBEX_ObjectNew(handle, OBEX_CMD_CONNECT);
-        hd.bs = "text/x-vCard";
+        hd.bs = "LiveScribeService";
         size = strlen(hd.bs);
-        OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_TYPE, hd, size, 0);
-        //hd.bs = "x-obex/object-profile";
-        //size = strlen(hd.bs);
-        //OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_NAME, hd, size, 0);
+        OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_TARGET, hd, size, 0);
 
         if (OBEX_Request(handle, obj) < 0)
             printf("request");
@@ -186,4 +166,5 @@ int main (int argc, char **argv) {
     /*while (!loop) {
         loop = 0;
     }*/
+    return 0;
 }
