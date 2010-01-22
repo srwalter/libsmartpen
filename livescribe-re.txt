@@ -1,0 +1,64 @@
+Livescribe
+
+-Uses OBEX over USB
+-Connect has TARGET header, value LivescribeService
+ -Response has WHO header, value LivescribeServi
+ -App-Param header, 0 - 4 - 1
+-GET has Connection ID, value 0x00000001
+ -Name header (len 256?) 'ppdata?key=pp0000
+ -Response has Length header, 0
+ -EOB header:
+
+<xml>
+	<parameter key="pp0000" exists=true" value="0x050000025c000d2a48"/>
+<xml>(trailing newline)
+
+-GET has Connection ID, value 0x00000002
+ -Name header 'ppdata?key=pp0000 (penid)
+ -Response identical to last
+-DISCONNECT with ConnID value 0x00000001
+-DISCONNECT with COnnID value 0x00000002
+
+-Connect with TARGET=LivescribeService
+ -Response identical to last
+-GET with ConnID=0x00000003, Name=peninfo
+ -Response:
+
+<xml>
+	<peninfo penid="0x0000025c000d2a48">
+		<battery voltage="4.215" level="100%" temperature="0"/>
+		<memory freebyptes="1912143872" totalbytes="1968177152" flashsize="2147483648"/>
+		<time absolute="8765399302"/>
+		<version swrev="604-090719-010700" svnbranch="branches/v1.7" svnrev="30850" modified="false"/>
+		<bootloader svnrev="29264"/>
+		<penlets count="98"/>
+	</peninfo>
+</xml>
+
+-DISCONNECT
+
+...
+-GET ConnID=0x00000004 Name='ppdata?key=pp8004
+ -Response:
+
+<xml>
+	<parameter key="pp8004" exists="true" value="0x8668750a02000000"/>
+</xml>
+
+-Get ConnID=0x00000004 Name=penletlist
+ -Response: (Continue)
+
+<xml>
+	<lsps>
+		<lsp lowpa="0x0008a00000016058" highpa="0x0008a00000016059" name="Unlined Journal 1 COVER classname="0xd5c9048d324268a" fullpath="penlets/Journal_A_Blank_Series_1_cvr_pen.afd" version="2.0" size="4808" group="" groupversion="0.0" category="" locked="false" private="false" installed="true" />
+		<lsp lowpa=0x0008a0000001300c" highpa="0x0008a00000014065" name="Unlined Journal 1" classname="0x2f87a14de7e570c8" fullpath="penlets/Journal_A_Blank_Series_1_pen.afd" version="2.0" size="27302" group="" groupversoin="0.0" category="" locked="false" private="false" installed="true />
+...
+
+	</lsps>
+</xml>
+
+-DISCONNECT
+-CONNECT
+ -GET name=pencommand?action=flushfs
+ -PUT name=pencommand?action=flushfs
+
