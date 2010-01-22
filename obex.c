@@ -69,6 +69,11 @@ static void obex_requestdone (obex_state *state, obex_t *hdl,
 static void obex_event (obex_t *hdl, obex_object_t *obj, int mode,
         int event, int obex_cmd, int obex_rsp) {
     obex_state *state;
+    uint8_t header_id;
+    obex_headerdata_t hdata;
+    uint32_t hlen;
+    obex_headerdata_t hd;
+    int size;
 
     printf("event!\n");
 
@@ -80,7 +85,9 @@ static void obex_event (obex_t *hdl, obex_object_t *obj, int mode,
     
     switch (event) {
         case OBEX_EV_PROGRESS:
-            printf("Progess\n");
+            hd.bq4 = 0;
+            size = 4;
+            OBEX_ObjectAddHeader(hdl, obj, OBEX_HDR_CONNECTION, hd, size, OBEX_FL_FIT_ONE_PACKET);
             break;
 
         case OBEX_EV_REQDONE:
@@ -100,7 +107,7 @@ int syncml_obex_send_req () {
     obex_interface_t *obex_intf;
     int size;
     int i, num;
-    wchar_t peninfo[32];
+    char *name;
 
     if (!handle) {
         handle = OBEX_Init(OBEX_TRANS_USB, obex_event, 0);
@@ -145,7 +152,8 @@ int syncml_obex_send_req () {
     size = 4;
     OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION, hd, size, OBEX_FL_FIT_ONE_PACKET);
     
-    hd.bs = g_utf8_to_utf16("peninfo", strlen("peninfo"), NULL, &num, NULL);
+    name="changelist?start_time=0";
+    hd.bs = g_utf8_to_utf16(name, strlen(name), NULL, &num, NULL);
 
     for (i=0; i<num; i++) {
         uint16_t *wchar = &hd.bs[i*2];
@@ -156,7 +164,16 @@ int syncml_obex_send_req () {
     
     if (OBEX_Request(handle, obj) < 0)
         printf("foo2\n");
-    OBEX_HandleInput(handle, 3);
+    while (OBEX_HandleInput(handle, 100) == 0);
+
+    obj = OBEX_ObjectNew(handle, OBEX_CMD_DISCONNECT);
+    hd.bq4 = 0;
+    size = 4;
+    OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION, hd, size, OBEX_FL_FIT_ONE_PACKET);
+    
+    if (OBEX_Request(handle, obj) < 0)
+        printf("foo2\n");
+    while (OBEX_HandleInput(handle, 100) == 0);
 
     return 1;
 }
