@@ -30,9 +30,8 @@ static void obex_requestdone (obex_state *state, obex_t *hdl,
                                             &hdata, &hlen)) {
                 /* Get the connection identifier */
                 printf("header %x\n", header_id);
-                if (header_id == OBEX_HDR_CONNECTION) {
-                    memcpy(&state->connid, &hdata, 4);
-                    printf("conn id: %d\n", state->connid);
+                if (header_id == OBEX_HDR_WHO) {
+                    printf("who: %s\n", hdata.bs);
                 }
             }
             break;
@@ -50,7 +49,7 @@ static void obex_requestdone (obex_state *state, obex_t *hdl,
             while (OBEX_ObjectGetNextHeader(hdl, obj, &header_id,
                                             &hdata, &hlen)) {
                 printf("header %x\n", header_id);
-                if (header_id == OBEX_HDR_BODY) {
+                if (header_id == OBEX_HDR_BODY || header_id == OBEX_HDR_BODY_END) {
                     printf("Body!\n\n%s\n\n", hdata.bs);
                     if (state->body)
                         free(state->body);
@@ -81,6 +80,8 @@ static void obex_event (obex_t *hdl, obex_object_t *obj, int mode,
     switch (event) {
         case OBEX_EV_PROGRESS:
             printf("Progess\n");
+            break;
+
         case OBEX_EV_REQDONE:
             obex_requestdone(state, hdl, obj, obex_cmd, obex_rsp);
             break;
@@ -90,8 +91,7 @@ static void obex_event (obex_t *hdl, obex_object_t *obj, int mode,
     }
 }
 
-int syncml_obex_send_req (char *data, int len,
-                          char *cmd, char *contenttype) {
+int syncml_obex_send_req () {
     obex_t *handle = NULL;
     obex_object_t *obj;
     obex_state state;
@@ -126,8 +126,8 @@ int syncml_obex_send_req (char *data, int len,
         printf("connect = %d\n", i);
 
         obj = OBEX_ObjectNew(handle, OBEX_CMD_CONNECT);
-        hd.bs = "LiveScribeService";
-        size = strlen(hd.bs);
+        hd.bs = "LivescribeService";
+        size = strlen(hd.bs)+1;
         OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_TARGET, hd, size, 0);
 
         if (OBEX_Request(handle, obj) < 0)
@@ -143,9 +143,9 @@ int syncml_obex_send_req (char *data, int len,
     size = 4;
     OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION, hd, size, OBEX_FL_FIT_ONE_PACKET);
     
-    hd.bs = contenttype;
-    size = strlen(contenttype)+1;
-    OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_TYPE, hd, size, OBEX_FL_FIT_ONE_PACKET);
+    hd.bs = "\0p\0e\0n\0i\0n\0f\0o\0";
+    size = 16;
+    OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_NAME, hd, size, OBEX_FL_FIT_ONE_PACKET);
     
     if (OBEX_Request(handle, obj) < 0)
         printf("foo2\n");
