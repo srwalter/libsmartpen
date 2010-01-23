@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <glib.h>
+#include <arpa/inet.h>
 
 struct obex_state {
     obex_t *handle;
@@ -130,8 +132,48 @@ obex_t *smartpen_connect(short vendor, short product)
 	}
 
         while (state->req_done < 1) {
-            OBEX_HandleInput(handle, 1);
+            OBEX_HandleInput(handle, 10);
         }
 out:
 	return handle;
+}
+
+char *smartpen_get_changelist(obex_t *handle, int starttime)
+{
+	struct obex_state *state;
+	int req_done;
+	obex_object_t *obj;
+	obex_headerdata_t hd;
+	int size, i;
+	glong num;
+	char name[256];
+
+	state = OBEX_GetUserData(handle);
+
+	obj = OBEX_ObjectNew(handle, OBEX_CMD_GET);
+	hd.bq4 = 0;
+	size = 4;
+	OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION,
+			     hd, size, OBEX_FL_FIT_ONE_PACKET);
+
+	snprintf(name, sizeof(name), "changelist?start_time=%d", starttime);
+	hd.bs = (unsigned char *)g_utf8_to_utf16(name, strlen(name),
+						 NULL, &num, NULL);
+
+	for (i=0; i<num; i++) {
+		uint16_t *wchar = (uint16_t*)&hd.bs[i*2];
+		*wchar = ntohs(*wchar);
+	}
+	size = (num+1) * sizeof(uint16_t);
+	OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_NAME, hd, size, OBEX_FL_FIT_ONE_PACKET);
+
+	if (OBEX_Request(handle, obj) < 0)
+		return NULL;
+
+	req_done = state->req_done;
+	while (state->req_done == req_done) {
+		OBEX_HandleInput(handle, 10);
+	}
+
+	return state->body;
 }
