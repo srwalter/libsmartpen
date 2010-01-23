@@ -138,7 +138,7 @@ out:
 	return handle;
 }
 
-char *smartpen_get_changelist(obex_t *handle, int starttime)
+static char *get_named_object(obex_t *handle, char *name, int *len)
 {
 	struct obex_state *state;
 	int req_done;
@@ -146,7 +146,6 @@ char *smartpen_get_changelist(obex_t *handle, int starttime)
 	obex_headerdata_t hd;
 	int size, i;
 	glong num;
-	char name[256];
 
 	state = OBEX_GetUserData(handle);
 
@@ -156,7 +155,6 @@ char *smartpen_get_changelist(obex_t *handle, int starttime)
 	OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION,
 			     hd, size, OBEX_FL_FIT_ONE_PACKET);
 
-	snprintf(name, sizeof(name), "changelist?start_time=%d", starttime);
 	hd.bs = (unsigned char *)g_utf8_to_utf16(name, strlen(name),
 						 NULL, &num, NULL);
 
@@ -175,7 +173,17 @@ char *smartpen_get_changelist(obex_t *handle, int starttime)
 		OBEX_HandleInput(handle, 10);
 	}
 
+	*len = state->body_len;
 	return state->body;
+}
+
+char *smartpen_get_changelist(obex_t *handle, int starttime)
+{
+	char name[256];
+	int len;
+
+	snprintf(name, sizeof(name), "changelist?start_time=%d", starttime);
+	return get_named_object(handle, name, &len);
 }
 
 void smartpen_disconnect (obex_t *handle)
@@ -205,42 +213,15 @@ void smartpen_disconnect (obex_t *handle)
 int smartpen_get_guid (obex_t *handle, FILE *out, char *guid,
 		       long long int start_time)
 {
-	struct obex_state *state;
-	int req_done;
-	obex_object_t *obj;
-	obex_headerdata_t hd;
-	int size, i;
-	glong num;
-	char name[512];
-
-	obj = OBEX_ObjectNew(handle, OBEX_CMD_GET);
-	hd.bq4 = 0;
-	size = 4;
-	OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION,
-			     hd, size, OBEX_FL_FIT_ONE_PACKET);
+	char name[256];
+	char *buf;
+	int len;
 
 	snprintf(name, sizeof(name), "lspdata?name=%s&start_time=%lld",
 		 guid, start_time);
-	hd.bs = (unsigned char *)g_utf8_to_utf16(name, strlen(name),
-						 NULL, &num, NULL);
 
-	for (i=0; i<num; i++) {
-		uint16_t *wchar = (uint16_t*)&hd.bs[i*2];
-		*wchar = ntohs(*wchar);
-	}
-	size = (num+1) * sizeof(uint16_t);
-	OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_NAME,
-			     hd, size, OBEX_FL_FIT_ONE_PACKET);
-
-	if (OBEX_Request(handle, obj) < 0)
-		return 0;
-
-	state = OBEX_GetUserData(handle);
-	req_done = state->req_done;
-	while (state->req_done == req_done) {
-		OBEX_HandleInput(handle, 10);
-	}
-
-	fwrite(state->body, state->body_len, 1, out);
+	buf = get_named_object(handle, name, &len);
+	fwrite(buf, len, 1, out);
 	return 1;
 }
+

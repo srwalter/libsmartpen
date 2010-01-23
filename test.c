@@ -11,7 +11,7 @@ int main (void)
         printf("Done\n");
 
         FILE *out = fopen("data", "w");
-        smartpen_get_guid(handle, out, "0xbc61f02c87e32f9b", 8782700699);
+        smartpen_get_guid(handle, out, "0x0bf11a726d11f3f3", 0);
         fclose(out);
 
         smartpen_disconnect(handle);
