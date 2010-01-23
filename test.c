@@ -14,7 +14,7 @@ int main (void)
 #if 0
         smartpen_get_guid(handle, out, "0x0bf11a726d11f3f3", 0);
 #else
-        smartpen_get_paperreplay(handle, out, 8791199188);
+        smartpen_get_penletlist(handle, out);
 #endif
         fclose(out);
 

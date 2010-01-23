@@ -10,5 +10,6 @@ int smartpen_get_guid (obex_t *handle, FILE *out, char *guid,
                        long long int start_time);
 int smartpen_get_paperreplay (obex_t *handle, FILE *out,
 			      long long int start_time);
+int smartpen_get_penletlist (obex_t *handle, FILE *out);
 
 #endif
