@@ -177,3 +177,27 @@ char *smartpen_get_changelist(obex_t *handle, int starttime)
 
 	return state->body;
 }
+
+void smartpen_disconnect (obex_t *handle)
+{
+	struct obex_state *state;
+	int req_done;
+	obex_object_t *obj;
+	obex_headerdata_t hd;
+	int size;
+
+	obj = OBEX_ObjectNew(handle, OBEX_CMD_DISCONNECT);
+	hd.bq4 = 0;
+	size = 4;
+	OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION,
+			     hd, size, OBEX_FL_FIT_ONE_PACKET);
+
+	if (OBEX_Request(handle, obj) < 0)
+		return;
+
+	state = OBEX_GetUserData(handle);
+	req_done = state->req_done;
+	while (state->req_done == req_done) {
+		OBEX_HandleInput(handle, 10);
+	}
+}
