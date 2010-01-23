@@ -188,7 +188,6 @@ int syncml_obex_send_req () {
 
     printf("LISTING DONE\n");
 
-#if 1
     obj = OBEX_ObjectNew(handle, OBEX_CMD_GET);
     hd.bq4 = 0;
     size = 4;
@@ -218,7 +217,6 @@ int syncml_obex_send_req () {
     }
     write(fd, state.body, state.body_len);
     close(fd);
-#endif
 
     obj = OBEX_ObjectNew(handle, OBEX_CMD_DISCONNECT);
     hd.bq4 = 0;
