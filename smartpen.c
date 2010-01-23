@@ -225,3 +225,17 @@ int smartpen_get_guid (obex_t *handle, FILE *out, char *guid,
 	return 1;
 }
 
+int smartpen_get_paperreplay (obex_t *handle, FILE *out,
+			      long long int start_time)
+{
+	char name[256];
+	char *buf;
+	int len;
+
+	snprintf(name, sizeof(name), "lspdata?name=com.livescribe.paperreplay.PaperReplay&start_time=%lld&returnVersion=0.3&remoteCaller=WIN_LD_200",
+		 start_time);
+
+	buf = get_named_object(handle, name, &len);
+	fwrite(buf, len, 1, out);
+	return 1;
+}

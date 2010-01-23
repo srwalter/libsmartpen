@@ -11,7 +11,11 @@ int main (void)
         printf("Done\n");
 
         FILE *out = fopen("data", "w");
+#if 0
         smartpen_get_guid(handle, out, "0x0bf11a726d11f3f3", 0);
+#else
+        smartpen_get_paperreplay(handle, out, 8791199188);
+#endif
         fclose(out);
 
         smartpen_disconnect(handle);
