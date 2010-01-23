@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 #include <glib.h>
 
 static int req_done=0;
@@ -14,6 +15,7 @@ typedef struct {
     int connid;
     int err;
     char *body;
+    int body_len;
     
 } obex_state;
 
@@ -26,7 +28,7 @@ static void obex_requestdone (obex_state *state, obex_t *hdl,
 
     printf("Request done\n");
     
-    switch (cmd) {
+    switch (cmd & ~OBEX_FINAL) {
         case OBEX_CMD_CONNECT:
             printf("cmd connect\n");
             while (OBEX_ObjectGetNextHeader(hdl, obj, &header_id, 
@@ -50,7 +52,6 @@ static void obex_requestdone (obex_state *state, obex_t *hdl,
                 printf("header %d\n", header_id);
             break;
             
-        case OBEX_CMD_GET | OBEX_FINAL:
         case OBEX_CMD_GET:
             printf("cmd get\n");
             while (OBEX_ObjectGetNextHeader(hdl, obj, &header_id,
@@ -61,6 +62,7 @@ static void obex_requestdone (obex_state *state, obex_t *hdl,
                     if (state->body)
                         free(state->body);
                     state->body = malloc(hlen);
+                    state->body_len = hlen;
                     memcpy(state->body, hdata.bs, hlen);
                     break;
                 }
@@ -77,24 +79,25 @@ static void obex_requestdone (obex_state *state, obex_t *hdl,
 static void obex_event (obex_t *hdl, obex_object_t *obj, int mode,
         int event, int obex_cmd, int obex_rsp) {
     obex_state *state;
-    uint8_t header_id;
-    obex_headerdata_t hdata;
-    uint32_t hlen;
     obex_headerdata_t hd;
     int size;
+    int rc;
 
     state = OBEX_GetUserData(hdl);
 
     if (event == OBEX_EV_PROGRESS) {
         hd.bq4 = 0;
         size = 4;
-        OBEX_ObjectAddHeader(hdl, obj, OBEX_HDR_CONNECTION, hd, size, OBEX_FL_FIT_ONE_PACKET);
+        rc = OBEX_ObjectAddHeader(hdl, obj, OBEX_HDR_CONNECTION, hd, size, OBEX_FL_FIT_ONE_PACKET);
+        if (rc < 0) {
+            printf("oah fail %d\n", rc);
+        }
         return;
     }
 
     printf("event!\n");
     if (obex_rsp != OBEX_RSP_SUCCESS && obex_rsp != OBEX_RSP_CONTINUE) {
-        printf("FAIL %x\n", obex_rsp);
+        printf("FAIL %x %x\n", obex_rsp, event);
         req_done++;
         return;
     }
@@ -118,6 +121,7 @@ int syncml_obex_send_req () {
     int size;
     int i, num;
     char *name;
+    int fd;
 
     if (!handle) {
         handle = OBEX_Init(OBEX_TRANS_USB, obex_event, 0);
@@ -184,6 +188,7 @@ int syncml_obex_send_req () {
 
     printf("LISTING DONE\n");
 
+#if 1
     obj = OBEX_ObjectNew(handle, OBEX_CMD_GET);
     hd.bq4 = 0;
     size = 4;
@@ -206,6 +211,14 @@ int syncml_obex_send_req () {
     }
 
     printf("DATA DONE\n");
+
+    fd = open("data", O_WRONLY|O_CREAT);
+    if (fd < 0) {
+        perror("open");
+    }
+    write(fd, state.body, state.body_len);
+    close(fd);
+#endif
 
     obj = OBEX_ObjectNew(handle, OBEX_CMD_DISCONNECT);
     hd.bq4 = 0;
