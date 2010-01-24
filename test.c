@@ -10,11 +10,16 @@ int main (void)
         printf("Changelist: %s\n", changelist);
         printf("Done\n");
 
+        changelist = smartpen_get_peninfo(handle);
+
+        printf("Peninfo: %s\n", changelist);
+        printf("Done\n");
+
         FILE *out = fopen("data", "w");
-#if 0
-        smartpen_get_guid(handle, out, "0x0bf11a726d11f3f3", 0);
+#if 1
+        smartpen_get_guid(handle, out, "0x0bf11a726d11f3f3", 8956739665);
 #else
-        smartpen_get_penletlist(handle, out);
+        smartpen_get_paperreplay(handle, out, 0);
 #endif
         fclose(out);
 

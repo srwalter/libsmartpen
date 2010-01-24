@@ -174,6 +174,7 @@ static char *get_named_object(obex_t *handle, char *name, int *len)
 	}
 
 	*len = state->body_len;
+	state->body[state->body_len] = '\0';
 	return state->body;
 }
 
@@ -249,4 +250,12 @@ int smartpen_get_penletlist (obex_t *handle, FILE *out)
 	buf = get_named_object(handle, name, &len);
 	fwrite(buf, len, 1, out);
 	return 1;
+}
+
+char * smartpen_get_peninfo (obex_t *handle)
+{
+	char *name = "peninfo";
+	int len;
+
+	return get_named_object(handle, name, &len);
 }
