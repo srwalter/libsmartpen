@@ -81,7 +81,10 @@ def get_time(br):
 def get_deltax(br):
     codebook = {
             '00110': 0,
+            '00111': 1,
             '10100': -1,
+            '01000': 2,
+            '01010': 7,
     }
     return decode(codebook, br, True)
 
@@ -89,7 +92,8 @@ def get_deltay(br):
     codebook = {
             '00000': 0,
             '10001': -1,
-            '000011': 1,
+            '00001': 1,
+            '00010': 2,
     }
     return decode(codebook, br, True)
 
@@ -103,6 +107,8 @@ def get_deltaforce(br):
 f0 = get_force(br)
 print "Initial force: %d" % f0
 
+xa=0
+ya=0
 while True:
     header = br.get_bits()
     assert header == 0
@@ -119,8 +125,14 @@ while True:
     deltaf = get_deltaforce(br)
     print "Delta F: %d" % deltaf
 
-    x0 += deltax * time
-    y0 += deltay * time
+    xa = deltax + (xa * time) / 256
+    x0 += xa
+    xa *= 256
+    print "XA = %d" % xa
+    ya = deltay + (ya * time) / 256
+    y0 += ya
+    ya *= 256
+    print "YA = %d" % ya
     f0 += deltaf
 
     print "%d, %d, %d, %d" % (x0, y0, f0, start_time)
