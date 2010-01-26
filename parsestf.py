@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-import sys
-
 class BitReader(object):
     def __init__(self, stream):
         self.stream = stream
@@ -67,8 +65,8 @@ def get_deltax(br):
             '10001': -4,
             '0010' : 5,
             '10000': -5,
-            '01111': -6,
             '01001': 6,
+            '01111': -6,
             '01010': 7,
             '01110': -7,
             '01101': -8,
@@ -84,7 +82,7 @@ def get_deltax(br):
             '101110': -13,
             '1100111' : 15,
     }
-    return decode(codebook, br, True)
+    return decode(codebook, br)
 
 def get_deltay(br):
     codebook = {
@@ -93,8 +91,8 @@ def get_deltay(br):
             '10001': -1,
             '00010': 2,
             '10000': -2,
-            '01111': -3,
             '00011': 3,
+            '01111': -3,
             '01110': -4,
             '00100': 4,
             '00101': 5,
@@ -109,8 +107,8 @@ def get_deltay(br):
             '01001': -9,
             '100101': 10,
             '101101': -10,
-            '101100': -11,
             '100110': 11,
+            '101100': -11,
             '100111': 12,
             '101011': -12,
             '101000': 13,
@@ -118,7 +116,7 @@ def get_deltay(br):
             '1011100': 14,
             '1101000': -15,
     }
-    return decode(codebook, br, True)
+    return decode(codebook, br)
 
 def get_deltaforce(br):
     codebook = {
@@ -127,83 +125,87 @@ def get_deltaforce(br):
     }
     return 2*decode(codebook, br)
 
-f = file(sys.argv[1])
-br = BitReader(f)
 
-magic = br.get_bits(16)
-if magic != 0x0100:
-    print "bad magic %x" % magic
-    sys.exit(1)
+class STFParser(object):
+    def __init__(self, stream):
+        br = BitReader(stream)
+        self.br = br
+        magic = br.get_bits(16)
+        if magic != 0x0100:
+            raise RuntimeError("bad magic %x" % magic)
 
-version = f.read(14)
-if version != "Anoto STF v1.0":
-    print "bad version %s" % version
-    sys.exit(1)
+        version = f.read(14)
+        if version != "Anoto STF v1.0":
+            raise RuntimeError("bad version %s" % version)
 
-print version
+        speed = br.get_bits(16)
+        self.speed = speed
 
-speed = br.get_bits(16)
-print "Speed %d" % speed
+    def parse(self):
+        start_time = 0
+        br = self.br
 
-start_time = 0
+        while True:
+            br.flush()
+            header = br.get_bits(8)
 
-while True:
-    br.flush()
-    header = br.get_bits(8)
-    print "Header %x" % header
+            if header == 0x18:
+                time = br.get_bits(64)
+            elif header == 0x10:
+                time = br.get_bits(32)
+            elif header == 0x08:
+                time = br.get_bits(16)
+            elif header == 0x80:
+                break
+            else:
+                raise RuntimeError("bad header %x" % header)
 
-    if header == 0x18:
-        time = br.get_bits(64)
-    elif header == 0x10:
-        time = br.get_bits(32)
-    elif header == 0x08:
-        time = br.get_bits(16)
-    elif header == 0x80:
-        break
-    else:
+            start_time += time
+            x0 = br.get_bits(16)
+            y0 = br.get_bits(16)
+            f0 = get_force(br)
+
+            self.handle_point(x0, y0, f0, start_time)
+
+            xa=0
+            ya=0
+            while True:
+                header = br.get_bits()
+                assert header == 0
+
+                time = get_time(br)
+                if time == 0:
+                    break
+
+                deltax = get_deltax(br)
+                deltay = get_deltay(br)
+                deltaf = get_deltaforce(br)
+
+                xa = deltax + (xa * time) / 256
+                x0 += xa
+                xa *= 256
+
+                ya = deltay + (ya * time) / 256
+                y0 += ya
+                ya *= 256
+                f0 += deltaf 
+
+                self.handle_point(x0, y0, f0, start_time)
+                pass
+        pass
+
+    def handle_point(self, x, y, force, time):
+        print "Override STFParser and provide your own!"
         assert False
 
-    start_time += time
-    print "Start time: %d" % start_time
+if __name__ == "__main__":
+    import sys
 
-    x0 = br.get_bits(16)
-    y0 = br.get_bits(16)
-    print "Start coord: %d, %d" % (x0, y0)
+    class TestParser(STFParser):
+        def handle_point(self, x, y, f, time):
+            print "%d, %d, %d, %d" % (x, y, f, time)
 
-
-    f0 = get_force(br)
-    print "Initial force: %d" % f0
-
-    xa=0
-    ya=0
-    while True:
-        header = br.get_bits()
-        assert header == 0
-
-        time = get_time(br)
-        print "Change in time: %d" % time
-        if time == 0:
-            break
-
-        deltax = get_deltax(br)
-        print "Delta X: %d" % deltax
-
-        deltay = get_deltay(br)
-        print "Delta Y: %d" % deltay
-
-        deltaf = get_deltaforce(br)
-        print "Delta F: %d" % deltaf
-
-        xa = deltax + (xa * time) / 256
-        x0 += xa
-        xa *= 256
-        print "XA = %d" % xa
-        ya = deltay + (ya * time) / 256
-        y0 += ya
-        ya *= 256
-        print "YA = %d" % ya
-        f0 += deltaf 
-
-        print "%d, %d, %d, %d" % (x0, y0, f0, start_time)
-
-print "File done"
+    f = file(sys.argv[1])
+    tp = TestParser(f)
+    print "Speed is %d" % tp.speed
+    tp.parse()
