@@ -8,6 +8,10 @@ class BitReader(object):
         self.byte = 0
         self.nbits = 0
 
+    def flush(self):
+        self.nbits=0
+        self.byte=0
+
     def get_bits(self, n=1):
         while n > self.nbits:
             x = self.stream.read(1)
@@ -23,35 +27,6 @@ class BitReader(object):
         self.byte -= x << (self.nbits - n)
         self.nbits -= n
         return x
-
-f = file(sys.argv[1])
-br = BitReader(f)
-
-magic = br.get_bits(16)
-if magic != 0x0100:
-    print "bad magic %x" % magic
-    sys.exit(1)
-
-version = f.read(14)
-if version != "Anoto STF v1.0":
-    print "bad version %s" % version
-    sys.exit(1)
-
-print version
-
-speed = br.get_bits(16)
-print "Speed %d" % speed
-
-header = br.get_bits(8)
-if header != 0x18:
-    print "bad header %x" % header
-
-start_time = br.get_bits(64)
-print "Start time: %d" % start_time
-
-x0 = br.get_bits(16)
-y0 = br.get_bits(16)
-print "Start coord: %d, %d" % (x0, y0)
 
 def decode(codebook, br, debug=False):
     code = ""
@@ -75,6 +50,7 @@ def get_force(br):
 def get_time(br):
     codebook = {
             '0': 1,
+            '1100': 0,
     }
     return decode(codebook, br)
 
@@ -126,40 +102,84 @@ def get_deltay(br):
 
 def get_deltaforce(br):
     codebook = {
-            '111111111': -30,
+            '11111111100': -30,
             '0': 0,
     }
-    return decode(codebook, br)
+    return 2*decode(codebook, br)
 
-f0 = get_force(br)
-print "Initial force: %d" % f0
+f = file(sys.argv[1])
+br = BitReader(f)
 
-xa=0
-ya=0
+magic = br.get_bits(16)
+if magic != 0x0100:
+    print "bad magic %x" % magic
+    sys.exit(1)
+
+version = f.read(14)
+if version != "Anoto STF v1.0":
+    print "bad version %s" % version
+    sys.exit(1)
+
+print version
+
+speed = br.get_bits(16)
+print "Speed %d" % speed
+
+start_time = 0
+
 while True:
-    header = br.get_bits()
-    assert header == 0
+    br.flush()
+    header = br.get_bits(8)
+    print "Header %x" % header
 
-    time = get_time(br)
-    print "Change in time: %d" % time
+    if header == 0x18:
+        time = br.get_bits(64)
+    elif header == 0x10:
+        time = br.get_bits(32)
+    elif header == 0x08:
+        time = br.get_bits(16)
+    else:
+        assert False
 
-    deltax = get_deltax(br)
-    print "Delta X: %d" % deltax
+    start_time += time
+    print "Start time: %d" % start_time
 
-    deltay = get_deltay(br)
-    print "Delta Y: %d" % deltay
+    x0 = br.get_bits(16)
+    y0 = br.get_bits(16)
+    print "Start coord: %d, %d" % (x0, y0)
 
-    deltaf = get_deltaforce(br)
-    print "Delta F: %d" % deltaf
 
-    xa = deltax + (xa * time) / 256
-    x0 += xa
-    xa *= 256
-    print "XA = %d" % xa
-    ya = deltay + (ya * time) / 256
-    y0 += ya
-    ya *= 256
-    print "YA = %d" % ya
-    f0 += deltaf
+    f0 = get_force(br)
+    print "Initial force: %d" % f0
 
-    print "%d, %d, %d, %d" % (x0, y0, f0, start_time)
+    xa=0
+    ya=0
+    while True:
+        header = br.get_bits()
+        assert header == 0
+
+        time = get_time(br)
+        print "Change in time: %d" % time
+        if time == 0:
+            break
+
+        deltax = get_deltax(br)
+        print "Delta X: %d" % deltax
+
+        deltay = get_deltay(br)
+        print "Delta Y: %d" % deltay
+
+        deltaf = get_deltaforce(br)
+        print "Delta F: %d" % deltaf
+
+        xa = deltax + (xa * time) / 256
+        x0 += xa
+        xa *= 256
+        print "XA = %d" % xa
+        ya = deltay + (ya * time) / 256
+        y0 += ya
+        ya *= 256
+        print "YA = %d" % ya
+        f0 += deltaf 
+
+        print "%d, %d, %d, %d" % (x0, y0, f0, start_time)
