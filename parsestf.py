@@ -50,7 +50,11 @@ def get_force(br):
 def get_time(br):
     codebook = {
             '0': 1,
+	    '10': 2,
+	    '1110': 4,
             '1100': 0,
+	    '111111010': 10,
+	    '11111110110': 15,
     }
     return decode(codebook, br)
 
@@ -83,9 +87,24 @@ def get_deltax(br):
             '101111': -12,
             '101101': 13,
             '101110': -13,
+	    '1100110': 14,
 	    '1110000': -14,
-            '1100111' : 15,
-            '1101111' : -15,
+            '1100111': 15,
+            '1101111': -15,
+            '1101000': 16,
+            '1101110': -16,
+            '1101001': 17,
+            '1101101': -17,
+            '1101010': 18,
+            '1101011': 19,
+            '11101110': -19,
+	    '11101101': -20,
+	    '11101100': -21,
+	    '11100100': 22,
+	    '11101011': -22,
+	    '11101010': -23,
+	    '11100110': 24,
+	    '111110010': -26,
     }
     return decode(codebook, br)
 
@@ -122,11 +141,18 @@ def get_deltay(br):
             '101001': -14,
             '1101000': -15,
             '1011110': 16,
+            '1100111': -16,
             '1011111': 17,
             '1100110': -17,
             '1100000': 18,
+            '1100101': -18,
+            '1100100': -19,
+	    '1100010': 20,
 	    '11010010': 21,
+	    '11010011': 22,
+	    '11100010': -22,
             '11010110': 25,
+            '111110010': -26,
     }
     return decode(codebook, br)
 
@@ -134,10 +160,14 @@ def get_deltaforce(br):
     codebook = {
             '0': 0,
 	    '1010': -1,
+	    '10111': -2,
 	    '1100111': -4,
+	    '11011111': -5,
 	    '11011110': -6,
 	    '1111111010': -24,
+	    '1111111001': -25,
 	    '1111111000': -26,
+	    '1111110110': -28,
 	    '1111110101': -29,
             '11111111100': -30,
     }
@@ -189,23 +219,31 @@ class STFParser(object):
             ya=0
             while True:
                 header = br.get_bits()
-                assert header == 0
+
+		if header == 1:
+		    trash = br.get_bits() # this header is 2 bits
 
                 time = get_time(br)
                 if time == 0:
                     break
 
-                deltax = get_deltax(br)
-                deltay = get_deltay(br)
+		if header == 1:
+		    xyhdr = br.get_bits()
+		    deltax = br.get_bits(8)
+		    deltay = br.get_bits(8)
+		else:
+		    deltax = get_deltax(br)
+		    deltay = get_deltay(br)
+
                 deltaf = get_deltaforce(br)
 
                 xa = deltax + (xa * time) / 256
                 x0 += xa
-                xa *= 256
+                xa *= 256 / time
 
                 ya = deltay + (ya * time) / 256
                 y0 += ya
-                ya *= 256
+                ya *= 256 / time
                 f0 += deltaf 
 
                 self.handle_point(x0, y0, f0, start_time)
