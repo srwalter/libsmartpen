@@ -29,6 +29,8 @@ class BitReader(object):
 def decode(codebook, br, debug=False):
     code = ""
     while code not in codebook:
+	if len(code) > 256:
+	    raise RuntimeError("code too long")
         bit = br.get_bits()
         if bit:
             code += "1"
@@ -78,11 +80,12 @@ def get_deltax(br):
             '101011': 11,
             '110000': -11,
             '101100': 12,
+            '101111': -12,
             '101101': 13,
             '101110': -13,
-            '101111': 14,
 	    '1110000': -14,
             '1100111' : 15,
+            '1101111' : -15,
     }
     return decode(codebook, br)
 
@@ -119,6 +122,9 @@ def get_deltay(br):
             '101001': -14,
             '1101000': -15,
             '1011110': 16,
+            '1011111': 17,
+            '1100110': -17,
+            '1100000': 18,
 	    '11010010': 21,
             '11010110': 25,
     }
@@ -126,10 +132,14 @@ def get_deltay(br):
 
 def get_deltaforce(br):
     codebook = {
-            '11111111100': -30,
+            '0': 0,
+	    '1010': -1,
+	    '1100111': -4,
 	    '11011110': -6,
 	    '1111111010': -24,
-            '0': 0,
+	    '1111111000': -26,
+	    '1111110101': -29,
+            '11111111100': -30,
     }
     return 2*decode(codebook, br)
 
@@ -142,7 +152,7 @@ class STFParser(object):
         if magic != 0x0100:
             raise RuntimeError("bad magic %x" % magic)
 
-        version = f.read(14)
+        version = stream.read(14)
         if version != "Anoto STF v1.0":
             raise RuntimeError("bad version %s" % version)
 
