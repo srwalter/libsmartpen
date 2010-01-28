@@ -1,0 +1,9 @@
+*.o
+*~
+.*.sw?
+.sw?
+*.png
+out
+*.pyc
+*.so
+pysmartpen.c
