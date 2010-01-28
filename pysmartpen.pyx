@@ -1,5 +1,4 @@
 
-
 cdef extern from "smartpen.h":
     ctypedef struct obex_t
     ctypedef struct FILE
@@ -13,6 +12,10 @@ cdef extern from "smartpen.h":
 				  long long int start_time)
     int smartpen_get_penletlist (obex_t *handle, FILE *out)
     char *smartpen_get_peninfo (obex_t *handle)
+
+cdef extern from "stdio.h":
+    FILE *fopen(char *fn, char *mode)
+    fclose(FILE *f)
 
 cdef class Smartpen:
     cdef obex_t *obex
@@ -29,3 +32,12 @@ cdef class Smartpen:
             raise RuntimeError("Not connected")
 
         return smartpen_get_changelist(self.obex, start_time)
+
+    def get_guid(self, filename, guid, start_time=0):
+        cdef FILE *f
+        f = fopen(filename, "w")
+        if (f == NULL):
+            raise IOError("Failed to open %s" % filename)
+        rc = smartpen_get_guid(self.obex, f, guid, start_time)
+        fclose(f)
+        return rc
