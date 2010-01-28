@@ -16,13 +16,17 @@ class Parser(parsestf.STFParser):
         super(Parser, self).__init__(*args)
         self.last_force=0
 
+    def handle_stroke_end(self, time):
+        ctx.stroke()
+        self.last_force = 0
+
     def handle_point(self, x, y, f, time):
-        if self.last_force:
-            ctx.line_to(x, y)
-        else:
-            ctx.stroke()
-            ctx.move_to(x, y)
-        self.last_force = f
+        if f:
+            if self.last_force:
+                ctx.line_to(x, y)
+            else:
+                ctx.move_to(x, y)
+        self.last_force = 1
 
 f = file(sys.argv[1])
 p = Parser(f)

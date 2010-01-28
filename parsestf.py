@@ -279,13 +279,19 @@ class STFParser(object):
 
                 time = get_time(br)
                 if time == 0:
+                    self.handle_stroke_end(time)
                     break
 
+                do_delta = True
 		if header == 1:
 		    len = br.get_bits()
                     if len:
-                        deltax = br.get_bits(16)
-                        deltay = br.get_bits(16)
+                        do_delta = False
+                        x1 = br.get_bits(16)
+                        y1 = br.get_bits(16)
+
+                        xa = x1 - x0
+                        ya = y1 - y0
                     else:
                         deltax = br.get_bits(8)
                         deltay = br.get_bits(8)
@@ -295,17 +301,22 @@ class STFParser(object):
 
                 deltaf = get_deltaforce(br)
 
-                xa = deltax + (xa * time) / 256
+                if do_delta:
+                    xa = deltax + (xa * time) / 256
+                    ya = deltay + (ya * time) / 256
+
                 x0 += xa
                 xa *= 256 / time
 
-                ya = deltay + (ya * time) / 256
                 y0 += ya
                 ya *= 256 / time
                 f0 += deltaf 
 
                 self.handle_point(x0, y0, f0, start_time)
                 pass
+        pass
+
+    def handle_stroke_end(self, time):
         pass
 
     def handle_point(self, x, y, force, time):
