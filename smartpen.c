@@ -12,7 +12,8 @@ struct obex_state {
     int req_done;
     char *body;
     int body_len;
-    
+    int got_connid;
+    int connid;
 };
 
 static void obex_requestdone (struct obex_state *state, obex_t *hdl,
@@ -23,6 +24,18 @@ static void obex_requestdone (struct obex_state *state, obex_t *hdl,
 	uint32_t hlen;
 
 	switch (cmd & ~OBEX_FINAL) {
+		case OBEX_CMD_CONNECT:
+			while (OBEX_ObjectGetNextHeader(hdl, obj, &header_id,
+							&hdata, &hlen)) {
+				if (header_id == OBEX_HDR_CONNECTION) {
+					state->got_connid=1;
+					state->connid = hdata.bq4;
+					printf("Connection ID: %d\n",
+					       state->connid);
+				}
+			}
+			break;
+
 		case OBEX_CMD_GET:
 			while (OBEX_ObjectGetNextHeader(hdl, obj, &header_id,
 							&hdata, &hlen)) {
@@ -53,7 +66,7 @@ static void obex_event (obex_t *hdl, obex_object_t *obj, int mode,
 	state = OBEX_GetUserData(hdl);
 
 	if (event == OBEX_EV_PROGRESS) {
-		hd.bq4 = 0;
+		hd.bq4 = state->connid;
 		size = 4;
 		rc = OBEX_ObjectAddHeader(hdl, obj, OBEX_HDR_CONNECTION,
 					  hd, size, OBEX_FL_FIT_ONE_PACKET);
@@ -83,12 +96,13 @@ obex_t *smartpen_connect(short vendor, short product)
 {
 	obex_t *handle;
 	obex_object_t *obj;
-	int i, num;
+	int i, rc, num;
 	struct obex_state *state;
 	obex_interface_t *obex_intf;
 	obex_headerdata_t hd;
-	int size;
+	int size, count;
 
+again:
 	handle = OBEX_Init(OBEX_TRANS_USB, obex_event, 0);
 	if (!handle)
 		goto out;
@@ -106,19 +120,20 @@ obex_t *smartpen_connect(short vendor, short product)
 		goto out;
         }
 
-        if (OBEX_InterfaceConnect(handle, obex_intf) < 0) {
-		handle = NULL;
-		goto out;
-	}
-
 	state = malloc(sizeof(struct obex_state));
 	if (!state) {
 		handle = NULL;
 		goto out;
 	}
 	memset(state, 0, sizeof(struct obex_state));
-        OBEX_SetUserData(handle, state);
 
+        if (OBEX_InterfaceConnect(handle, obex_intf) < 0) {
+		printf("Connect failed\n");
+		handle = NULL;
+		goto out;
+	}
+
+        OBEX_SetUserData(handle, state);
         OBEX_SetTransportMTU(handle, 0x400, 0x400);
 
         obj = OBEX_ObjectNew(handle, OBEX_CMD_CONNECT);
@@ -126,14 +141,17 @@ obex_t *smartpen_connect(short vendor, short product)
         size = strlen((char*)hd.bs)+1;
         OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_TARGET, hd, size, 0);
 
-        if (OBEX_Request(handle, obj) < 0) {
-		handle = NULL;
-		goto out;
-	}
+        rc = OBEX_Request(handle, obj);
 
-        while (state->req_done < 1) {
-            OBEX_HandleInput(handle, 10);
+	count = state->req_done;
+        while (rc == 0 && state->req_done <= count) {
+            OBEX_HandleInput(handle, 100);
         }
+
+	if (rc < 0 || !state->got_connid) {
+		OBEX_Cleanup(handle);
+		goto again;
+	}
 out:
 	return handle;
 }
@@ -150,7 +168,7 @@ static char *get_named_object(obex_t *handle, char *name, int *len)
 	state = OBEX_GetUserData(handle);
 
 	obj = OBEX_ObjectNew(handle, OBEX_CMD_GET);
-	hd.bq4 = 0;
+	hd.bq4 = state->connid;
 	size = 4;
 	OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION,
 			     hd, size, OBEX_FL_FIT_ONE_PACKET);
@@ -170,11 +188,15 @@ static char *get_named_object(obex_t *handle, char *name, int *len)
 
 	req_done = state->req_done;
 	while (state->req_done == req_done) {
-		OBEX_HandleInput(handle, 10);
+		OBEX_HandleInput(handle, 100);
 	}
 
-	*len = state->body_len;
-	state->body[state->body_len] = '\0';
+	if (state->body) {
+		*len = state->body_len;
+		state->body[state->body_len] = '\0';
+	} else {
+		*len = 0;
+	}
 	return state->body;
 }
 
@@ -195,8 +217,9 @@ void smartpen_disconnect (obex_t *handle)
 	obex_headerdata_t hd;
 	int size;
 
+	state = OBEX_GetUserData(handle);
 	obj = OBEX_ObjectNew(handle, OBEX_CMD_DISCONNECT);
-	hd.bq4 = 0;
+	hd.bq4 = state->connid;
 	size = 4;
 	OBEX_ObjectAddHeader(handle, obj, OBEX_HDR_CONNECTION,
 			     hd, size, OBEX_FL_FIT_ONE_PACKET);
@@ -204,10 +227,9 @@ void smartpen_disconnect (obex_t *handle)
 	if (OBEX_Request(handle, obj) < 0)
 		return;
 
-	state = OBEX_GetUserData(handle);
 	req_done = state->req_done;
 	while (state->req_done == req_done) {
-		OBEX_HandleInput(handle, 10);
+		OBEX_HandleInput(handle, 100);
 	}
 }
 
@@ -223,7 +245,7 @@ int smartpen_get_guid (obex_t *handle, FILE *out, char *guid,
 
 	buf = get_named_object(handle, name, &len);
 	fwrite(buf, len, 1, out);
-	return 1;
+	return len;
 }
 
 int smartpen_get_paperreplay (obex_t *handle, FILE *out,

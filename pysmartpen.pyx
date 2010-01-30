@@ -23,21 +23,44 @@ cdef class Smartpen:
         self.obex = NULL
 
     def connect(self, vendor=0x1cfb, product=0x1020):
+        if self.obex != NULL:
+            raise RuntimeError("Already connected")
         self.obex = smartpen_connect(vendor, product)
         if (self.obex == NULL):
             raise RuntimeError("Failed to connect")
 
     def get_changelist(self, start_time=0):
+        cdef char *list
+
         if (self.obex == NULL):
             raise RuntimeError("Not connected")
 
-        return smartpen_get_changelist(self.obex, start_time)
+        list = smartpen_get_changelist(self.obex, start_time)
+        print "foo"
+        if list != NULL:
+            return list
+        raise RuntimeError("Failed to get changelist")
 
     def get_guid(self, filename, guid, start_time=0):
         cdef FILE *f
+
+        if (self.obex == NULL):
+            raise RuntimeError("Not connected")
+
         f = fopen(filename, "w")
         if (f == NULL):
             raise IOError("Failed to open %s" % filename)
         rc = smartpen_get_guid(self.obex, f, guid, start_time)
         fclose(f)
         return rc
+
+    def get_info(self):
+        if (self.obex == NULL):
+            raise RuntimeError("Not connected")
+        return smartpen_get_peninfo(self.obex)
+
+    def disconnect(self):
+        if (self.obex == NULL):
+            raise RuntimeError("Not connected")
+        smartpen_disconnect(self.obex)
+        self.obex = NULL
