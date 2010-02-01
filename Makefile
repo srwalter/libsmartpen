@@ -1,14 +1,14 @@
-CFLAGS=-Wall -fPIC -I/usr/include/python2.5 `pkg-config --cflags glib-2.0 openobex` -g
+CFLAGS=-Wall -fPIC -I/usr/include/python2.5 `pkg-config --cflags glib-2.0 openobex libusb-1.0` -g
 
 export PKG_CONFIG_PATH=$(HOME)/sandboxes/openobex/lib/pkgconfig
 
 all: obex pysmartpen.so
 
 pysmartpen.so: smartpen.o pysmartpen.o
-	gcc -o $@ -shared $^ `pkg-config --libs glib-2.0 openobex`
+	gcc -o $@ -shared $^ `pkg-config --libs glib-2.0 openobex libusb-1.0`
 
 pysmartpen.c: pysmartpen.pyx
 	pyrexc $^
 
 obex: test.o smartpen.o
-	gcc -o $@ $^ `pkg-config --libs glib-2.0 openobex`
+	gcc -o $@ $^ `pkg-config --libs glib-2.0 openobex libusb-1.0`

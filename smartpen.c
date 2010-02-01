@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <glib.h>
+#include <libusb.h>
+#include <assert.h>
 #include <arpa/inet.h>
 
 struct obex_state {
@@ -92,6 +94,45 @@ static void obex_event (obex_t *hdl, obex_object_t *obj, int mode,
 	}
 }
 
+static void pen_reset (short vendor, short product)
+{
+	libusb_context *ctx;
+	libusb_device_handle *dev;
+	int rc;
+
+	printf("swizzle\n");
+	
+	rc = libusb_init(&ctx);
+	assert(rc == 0);
+	dev = libusb_open_device_with_vid_pid(ctx, vendor, product);
+	libusb_reset_device(dev);
+	libusb_close(dev);
+	libusb_exit(ctx);
+}
+
+static void swizzle_usb (short vendor, short product)
+{
+	libusb_context *ctx;
+	libusb_device_handle *dev;
+	int rc;
+
+	printf("swizzle\n");
+	
+	rc = libusb_init(&ctx);
+	assert(rc == 0);
+	dev = libusb_open_device_with_vid_pid(ctx, vendor, product);
+	assert(dev);
+
+	libusb_set_configuration(dev, 1);
+	libusb_set_interface_alt_setting(dev, 1, 0);
+	libusb_set_interface_alt_setting(dev, 1, 1);
+
+	libusb_close(dev);
+	libusb_exit(ctx);
+}
+
+static char *get_named_object(obex_t *handle, char *name, int *len);
+
 obex_t *smartpen_connect(short vendor, short product)
 {
 	obex_t *handle;
@@ -101,6 +142,7 @@ obex_t *smartpen_connect(short vendor, short product)
 	obex_interface_t *obex_intf;
 	obex_headerdata_t hd;
 	int size, count;
+	char *buf;
 
 again:
 	handle = OBEX_Init(OBEX_TRANS_USB, obex_event, 0);
@@ -127,6 +169,8 @@ again:
 	}
 	memset(state, 0, sizeof(struct obex_state));
 
+	swizzle_usb(vendor, product);
+
         if (OBEX_InterfaceConnect(handle, obex_intf) < 0) {
 		printf("Connect failed\n");
 		handle = NULL;
@@ -149,9 +193,19 @@ again:
         }
 
 	if (rc < 0 || !state->got_connid) {
+		printf("Retry connection...\n");
 		OBEX_Cleanup(handle);
 		goto again;
 	}
+
+	buf = get_named_object(handle, "ppdata?key=pp0000", &rc);
+	if (!buf) {
+		printf("Retry connection...\n");
+		OBEX_Cleanup(handle);
+		pen_reset(vendor, product);
+		goto again;
+	}
+
 out:
 	return handle;
 }
