@@ -15,7 +15,7 @@ cdef extern from "smartpen.h":
 
 cdef extern from "stdio.h":
     FILE *fopen(char *fn, char *mode)
-    fclose(FILE *f)
+    void fclose(FILE *f)
 
 cdef class Smartpen:
     cdef obex_t *obex
@@ -36,7 +36,6 @@ cdef class Smartpen:
             raise RuntimeError("Not connected")
 
         list = smartpen_get_changelist(self.obex, start_time)
-        print "foo"
         if list != NULL:
             return list
         raise RuntimeError("Failed to get changelist")
