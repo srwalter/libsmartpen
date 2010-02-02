@@ -27,9 +27,21 @@ class BitReader(object):
         return x
 
 def decode(codebook, br, debug=False):
+    def max(x, xs):
+        if len(xs) == 0:
+            return x
+        y = max(xs[0], xs[1:])
+        if x > y:
+            return x
+        else:
+            return y
+    keys = codebook.keys()
+    keys = map(len, keys)
+    maxlen = max(keys[0], keys[1:])
+
     code = ""
     while code not in codebook:
-	if len(code) > 256:
+	if len(code) > maxlen:
 	    raise RuntimeError("code too long")
         bit = br.get_bits()
         if bit:
@@ -123,7 +135,10 @@ def get_deltax(br):
 	    '111100111': 36,
 	    '1111101001': 40,
     }
-    return decode(codebook, br)
+    try:
+        return decode(codebook, br)
+    except:
+        raise RuntimeError("Unknown X code")
 
 def get_deltay(br):
     codebook = {
@@ -188,7 +203,10 @@ def get_deltay(br):
             '1111110000': -59,
             '1111100110': 72,
     }
-    return decode(codebook, br)
+    try:
+        return decode(codebook, br)
+    except:
+        raise RuntimeError("Unknown Y code")
 
 def get_deltaforce(br):
     codebook = {
@@ -226,7 +244,10 @@ def get_deltaforce(br):
             '11111111100': -30,
             '111000111': 30,
     }
-    return 2*decode(codebook, br)
+    try:
+        return 2*decode(codebook, br)
+    except:
+        raise RuntimeError("Unknown force code")
 
 
 class STFParser(object):
