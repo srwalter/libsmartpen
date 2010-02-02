@@ -263,60 +263,65 @@ class STFParser(object):
             elif header == 0x80:
                 break
             else:
-                raise RuntimeError("bad header %x" % header)
+                print "bad header %x" % header
+                continue
 
-            start_time += time
-            x0 = br.get_bits(16)
-            y0 = br.get_bits(16)
-            f0 = get_force(br)
-
-            self.handle_point(x0, y0, f0, start_time)
-
-            xa=0
-            ya=0
-            while True:
-                header = br.get_bits()
-
-		if header == 1:
-		    trash = br.get_bits() # this header is 2 bits
-
-                time = get_time(br)
-                if time == 0:
-                    self.handle_stroke_end(time)
-                    break
-
-                do_delta = True
-		if header == 1:
-		    len = br.get_bits()
-                    if len:
-                        do_delta = False
-                        x1 = br.get_bits(16)
-                        y1 = br.get_bits(16)
-
-                        xa = x1 - x0
-                        ya = y1 - y0
-                    else:
-                        deltax = br.get_bits(8)
-                        deltay = br.get_bits(8)
-		else:
-		    deltax = get_deltax(br)
-		    deltay = get_deltay(br)
-
-                deltaf = get_deltaforce(br)
-
-                if do_delta:
-                    xa = deltax + (xa * time) / 256
-                    ya = deltay + (ya * time) / 256
-
-                x0 += xa
-                xa *= 256 / time
-
-                y0 += ya
-                ya *= 256 / time
-                f0 += deltaf 
+            try:
+                start_time += time
+                x0 = br.get_bits(16)
+                y0 = br.get_bits(16)
+                f0 = get_force(br)
 
                 self.handle_point(x0, y0, f0, start_time)
-                pass
+
+                xa=0
+                ya=0
+                while True:
+                    header = br.get_bits()
+
+                    if header == 1:
+                        trash = br.get_bits() # this header is 2 bits
+
+                    time = get_time(br)
+                    if time == 0:
+                        self.handle_stroke_end(time)
+                        break
+
+                    do_delta = True
+                    if header == 1:
+                        len = br.get_bits()
+                        if len:
+                            do_delta = False
+                            x1 = br.get_bits(16)
+                            y1 = br.get_bits(16)
+
+                            xa = x1 - x0
+                            ya = y1 - y0
+                        else:
+                            deltax = br.get_bits(8)
+                            deltay = br.get_bits(8)
+                    else:
+                        deltax = get_deltax(br)
+                        deltay = get_deltay(br)
+
+                    deltaf = get_deltaforce(br)
+
+                    if do_delta:
+                        xa = deltax + (xa * time) / 256
+                        ya = deltay + (ya * time) / 256
+
+                    x0 += xa
+                    xa *= 256 / time
+
+                    y0 += ya
+                    ya *= 256 / time
+                    f0 += deltaf 
+
+                    self.handle_point(x0, y0, f0, start_time)
+                    pass
+            except Exception, e:
+                print e
+                continue
         pass
 
     def handle_stroke_end(self, time):
