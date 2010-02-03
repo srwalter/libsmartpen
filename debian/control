@@ -1,0 +1,12 @@
+Source: libsmartpen
+Section: text
+Priority: extra
+Maintainer: Steven Walter <stevenrwalter@gmail.com>
+Build-Depends: debhelper (>= 5), cdbs, libopenobex1-dev, libusb-1.0-0-dev, libglib-2.0-dev
+Standards-Version: 3.7.2
+
+Package: libsmartpen
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libopenobex1 >= 1.5-2srw0, libglib-2.0-0, libusb-1.0-0
+Description: Library for communicating with the Livescribe Pulse Smartpen
+ Routines for connecting to and downloading data from the pulse smartpen

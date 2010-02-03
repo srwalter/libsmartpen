@@ -1,0 +1,6 @@
+libsmartpen (0.1-1) karmic; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Tue,  2 Feb 2010 21:22:45 -0500
+
