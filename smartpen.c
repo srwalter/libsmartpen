@@ -80,6 +80,7 @@ static void obex_event (obex_t *hdl, obex_object_t *obj, int mode,
 
 	if (obex_rsp != OBEX_RSP_SUCCESS && obex_rsp != OBEX_RSP_CONTINUE) {
 		printf("FAIL %x %x\n", obex_rsp, event);
+		assert(0);
 		state->req_done++;
 		return;
 	}
@@ -171,8 +172,9 @@ again:
 
 	swizzle_usb(vendor, product);
 
-        if (OBEX_InterfaceConnect(handle, obex_intf) < 0) {
-		printf("Connect failed\n");
+        rc = OBEX_InterfaceConnect(handle, obex_intf);
+        if (rc < 0) {
+		printf("Connect failed %d\n", rc);
 		handle = NULL;
 		goto out;
 	}
