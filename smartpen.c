@@ -138,7 +138,7 @@ obex_t *smartpen_connect(short vendor, short product)
 {
 	obex_t *handle;
 	obex_object_t *obj;
-	int i, rc, num;
+	int rc, num;
 	struct obex_state *state;
 	obex_interface_t *obex_intf;
 	obex_headerdata_t hd;
@@ -150,15 +150,9 @@ again:
 	if (!handle)
 		goto out;
 
-        num = OBEX_EnumerateInterfaces(handle);
-	for (i=0; i<num; i++) {
-		obex_intf = OBEX_GetInterfaceByIndex(handle, i);
-		if (obex_intf->usb.idVendor == vendor &&
-		    obex_intf->usb.idProduct == product) {
-			break;
-		}
-	}
-        if (i == num) {
+        num = OBEX_FindInterfaces(handle, &obex_intf);
+        if (num != 1) {
+		printf("Ambiguous device\n");
 		handle = NULL;
 		goto out;
         }
