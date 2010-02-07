@@ -5,6 +5,7 @@ from distutils.extension import Extension
 from Pyrex.Distutils import build_ext
 setup(
   name = "pysmartpen",
+  py_modules=["parsestf"],
   ext_modules=[ 
     Extension("pysmartpen", ["pysmartpen.pyx"], libraries = ["smartpen"])
     ],
