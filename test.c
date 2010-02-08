@@ -24,7 +24,7 @@ int main (void)
 
         FILE *out = fopen("data", "w");
 #if 1
-        rc = smartpen_get_guid(handle, out, "0xbc61f02c87e32f9b", 0);
+        rc = smartpen_get_guid(handle, out, "0x0bf11a726d11f3f3", 0);
         if (!rc) {
             printf("get_guid fail\n");
         }

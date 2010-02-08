@@ -24,3 +24,4 @@ obex: test.o smartpen.o
 
 install: libsmartpen.so
 	install -m755 -D libsmartpen.so $(DESTDIR)/usr/lib/libsmartpen.so
+	install -m644 -D 75-smartpen.rules $(DESTDIR)/lib/udev/rules.d/75-smartpen.rules
