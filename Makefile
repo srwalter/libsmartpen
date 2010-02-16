@@ -20,7 +20,10 @@ pysmartpen.c: pysmartpen.pyx
 obex: test.o smartpen.o
 	gcc -o $@ $^ `pkg-config --libs glib-2.0 openobex libusb-1.0` -L. -lsmartpen
 
-.PHONY: install
+.PHONY: install clean
+
+clean:
+	rm -f libsmartpen.so *.o pysmartpen.c
 
 install: libsmartpen.so
 	install -m755 -D libsmartpen.so $(DESTDIR)/usr/lib/libsmartpen.so

@@ -2,7 +2,7 @@ Source: libsmartpen
 Section: text
 Priority: extra
 Maintainer: Steven Walter <stevenrwalter@gmail.com>
-Build-Depends: debhelper (>= 5), cdbs, libopenobex1-dev, libusb-1.0-0-dev, libglib2.0-dev
+Build-Depends: debhelper (>= 5), cdbs, libopenobex1-dev, libusb-1.0-0-dev, libglib2.0-dev, python, python-pyrex, python2.6-dev, python-support
 Standards-Version: 3.7.2
 
 Package: libsmartpen

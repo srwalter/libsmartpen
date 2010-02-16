@@ -7,7 +7,8 @@ setup(
   name = "pysmartpen",
   py_modules=["parsestf"],
   ext_modules=[ 
-    Extension("pysmartpen", ["pysmartpen.pyx"], libraries = ["smartpen"])
+    Extension("pysmartpen", ["pysmartpen.pyx"], libraries = ["smartpen"],
+              library_dirs=["."])
     ],
   cmdclass = {'build_ext': build_ext}
 )

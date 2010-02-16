@@ -1,3 +1,39 @@
+libsmartpen (0.2-7) karmic; urgency=low
+
+  * Handle multiple OBEX devices more gracefully
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Mon, 15 Feb 2010 21:49:45 -0500
+
+libsmartpen (0.2-6) karmic; urgency=low
+
+  * Another build error
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Mon,  8 Feb 2010 15:05:45 -0500
+
+libsmartpen (0.2-5) karmic; urgency=low
+
+  * Last build error?
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Mon,  8 Feb 2010 14:55:45 -0500
+
+libsmartpen (0.2-4) karmic; urgency=low
+
+  * Another build error
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Sun,  7 Feb 2010 22:28:45 -0500
+
+libsmartpen (0.2-3) karmic; urgency=low
+
+  * Another build error
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Sun,  7 Feb 2010 22:10:45 -0500
+
+libsmartpen (0.2-2) karmic; urgency=low
+
+  * Fix build error
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Sun,  7 Feb 2010 21:42:45 -0500
+
 libsmartpen (0.2-1) karmic; urgency=low
 
   * First public release
