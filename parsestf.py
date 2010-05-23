@@ -3,6 +3,8 @@
 class BitReader(object):
     def __init__(self, stream):
         self.stream = stream
+        self.byte_array = self.stream.read()
+        self.index = 0
         self.byte = 0
         self.nbits = 0
 
@@ -12,12 +14,13 @@ class BitReader(object):
 
     def get_bits(self, n=1):
         while n > self.nbits:
-            x = self.stream.read(1)
-            if x == "":
+            if self.index >= len(self.byte_array):
                 print self.nbits
                 print "%x" % self.byte
                 raise EOFError
 
+            x = self.byte_array[self.index]
+            self.index += 1
             x = ord(x)
             self.byte = (self.byte << 8) | x
             self.nbits += 8
@@ -268,9 +271,10 @@ class STFParser(object):
         if magic != 0x0100:
             raise RuntimeError("bad magic %x" % magic)
 
-        version = stream.read(14)
-        if version != "Anoto STF v1.0":
-            raise RuntimeError("bad version %s" % version)
+        br.get_bits(8*14)
+        #version = stream.read(14)
+        #if version != "Anoto STF v1.0":
+        #    raise RuntimeError("bad version %s" % version)
 
         speed = br.get_bits(16)
         self.speed = speed
