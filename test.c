@@ -4,7 +4,7 @@
 
 int main (void)
 {
-        obex_t *handle = smartpen_connect(0x1cfb, 0x1020);
+        obex_t *handle = smartpen_connect(0x1cfb, 0x1030);
         char *changelist;
         int rc;
 

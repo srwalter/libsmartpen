@@ -267,6 +267,8 @@ class STFParser(object):
         magic = br.get_bits(16)
         if magic != 0x0100:
             raise RuntimeError("bad magic %x" % magic)
+#        if magic != 0x504b:
+#            raise RuntimeError("bad magic %x" % magic)
 
         version = stream.read(14)
         if version != "Anoto STF v1.0":
@@ -370,6 +372,7 @@ if __name__ == "__main__":
             print "%d, %d, %d, %d" % (x, y, f, time)
 
     f = file(sys.argv[1])
+    f.seek(0x4b0c)
     tp = TestParser(f)
     print "Speed is %d" % tp.speed
     tp.parse()

@@ -22,7 +22,7 @@ cdef class Smartpen:
     def __new__(self):
         self.obex = NULL
 
-    def connect(self, vendor=0x1cfb, product=0x1020):
+    def connect(self, vendor=0x1cfb, product=0x1030):
         if self.obex != NULL:
             raise RuntimeError("Already connected")
         self.obex = smartpen_connect(vendor, product)

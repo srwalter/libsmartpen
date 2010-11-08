@@ -1,3 +1,9 @@
+libsmartpen (0.2-8) lucid; urgency=low
+
+  * Bump for lucid
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Thu, 15 Apr 2010 21:49:45 -0500
+
 libsmartpen (0.2-7) karmic; urgency=low
 
   * Handle multiple OBEX devices more gracefully
