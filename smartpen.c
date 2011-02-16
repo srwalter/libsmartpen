@@ -138,7 +138,7 @@ obex_t *smartpen_connect(short vendor, short product)
 {
 	obex_t *handle;
 	obex_object_t *obj;
-	int rc, num;
+	int rc, num, i;
 	struct obex_state *state;
 	obex_interface_t *obex_intf;
 	obex_headerdata_t hd;
@@ -151,8 +151,13 @@ again:
 		goto out;
 
         num = OBEX_FindInterfaces(handle, &obex_intf);
-        if (num != 1) {
-		printf("Ambiguous device\n");
+	for (i=0; i<num; i++) {
+		if (!strcmp(obex_intf[i].usb.manufacturer, "Livescribe"))
+			break;
+	}
+
+        if (i == num) {
+		printf("No such device\n");
 		handle = NULL;
 		goto out;
         }
@@ -166,7 +171,7 @@ again:
 
 	swizzle_usb(vendor, product);
 
-        rc = OBEX_InterfaceConnect(handle, obex_intf);
+        rc = OBEX_InterfaceConnect(handle, &obex_intf[i]);
         if (rc < 0) {
 		printf("Connect failed %d\n", rc);
 		handle = NULL;
