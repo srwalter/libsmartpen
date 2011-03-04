@@ -29,7 +29,6 @@ class Parser(parsestf.STFParser):
         self.last_force = 1
 
 f = file(sys.argv[1])
-f.seek(0x4b0c)
 p = Parser(f)
 p.parse()
 
