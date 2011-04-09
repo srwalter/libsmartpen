@@ -1,3 +1,9 @@
+libsmartpen (0.3-1) maverick; urgency=low
+
+  * Support alternate device IDs
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Sat, 09 Apr 2011 21:49:45 -0500
+
 libsmartpen (0.2-10) maverick; urgency=low
 
   * Stuff

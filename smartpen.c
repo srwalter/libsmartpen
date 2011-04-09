@@ -111,7 +111,7 @@ static void pen_reset (short vendor, short product)
 	libusb_exit(ctx);
 }
 
-static void swizzle_usb (short vendor, short product)
+static int swizzle_usb (short vendor, short product)
 {
 	libusb_context *ctx;
 	libusb_device_handle *dev;
@@ -122,14 +122,18 @@ static void swizzle_usb (short vendor, short product)
 	rc = libusb_init(&ctx);
 	assert(rc == 0);
 	dev = libusb_open_device_with_vid_pid(ctx, vendor, product);
-	assert(dev);
+	if (!dev)
+		goto out;
 
 	libusb_set_configuration(dev, 1);
 	libusb_set_interface_alt_setting(dev, 1, 0);
 	libusb_set_interface_alt_setting(dev, 1, 1);
+	rc = 1;
 
+out:
 	libusb_close(dev);
 	libusb_exit(ctx);
+	return rc;
 }
 
 static char *get_named_object(obex_t *handle, char *name, int *len);
@@ -169,7 +173,10 @@ again:
 	}
 	memset(state, 0, sizeof(struct obex_state));
 
-	swizzle_usb(vendor, product);
+	if (!swizzle_usb(vendor, product)) {
+		handle = NULL;
+		goto out;
+	}
 
         rc = OBEX_InterfaceConnect(handle, &obex_intf[i]);
         if (rc < 0) {
