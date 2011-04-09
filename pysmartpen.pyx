@@ -1,5 +1,5 @@
 
-cdef extern from "smartpen.h":
+cdef extern from "smartpen.h" nogil:
     ctypedef struct obex_t
     ctypedef struct FILE
 
@@ -42,6 +42,7 @@ cdef class Smartpen:
 
     def get_guid(self, filename, guid, start_time=0):
         cdef FILE *f
+        cdef int rc
 
         if (self.obex == NULL):
             raise RuntimeError("Not connected")
@@ -50,6 +51,24 @@ cdef class Smartpen:
         if (f == NULL):
             raise IOError("Failed to open %s" % filename)
         rc = smartpen_get_guid(self.obex, f, guid, start_time)
+        fclose(f)
+        return rc
+
+    def get_paperreplay(self, filename, start_time=0):
+        cdef FILE *f
+        cdef int rc
+        cdef long long int c_time
+
+        c_time = start_time
+
+        if (self.obex == NULL):
+            raise RuntimeError("Not connected")
+
+        f = fopen(filename, "w")
+        if (f == NULL):
+            raise IOError("Failed to open %s" % filename)
+        with nogil:
+            rc = smartpen_get_paperreplay(self.obex, f, c_time)
         fclose(f)
         return rc
 
