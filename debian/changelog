@@ -1,3 +1,9 @@
+libsmartpen (0.5-1) maverick; urgency=low
+
+  * Yet more USB ids
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Sat, 09 Apr 2011 21:49:45 -0500
+
 libsmartpen (0.4-1) maverick; urgency=low
 
   * Bind paperreplay method to python
