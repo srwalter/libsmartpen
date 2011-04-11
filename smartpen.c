@@ -45,7 +45,7 @@ static void obex_requestdone (struct obex_state *state, obex_t *hdl,
 				    header_id == OBEX_HDR_BODY_END) {
 					if (state->body)
 						free(state->body);
-					state->body = malloc(hlen);
+					state->body = malloc(hlen+1);
 					state->body_len = hlen;
 					memcpy(state->body, hdata.bs, hlen);
 					break;

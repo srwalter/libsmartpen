@@ -1,6 +1,6 @@
-libsmartpen (0.5-1) maverick; urgency=low
+libsmartpen (0.5-2) maverick; urgency=low
 
-  * Yet more USB ids
+  * Fix buffer overflow
 
  -- Steven Walter <stevenrwalter@gmail.com>  Sat, 09 Apr 2011 21:49:45 -0500
 
