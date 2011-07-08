@@ -135,7 +135,7 @@ int syncml_obex_send_req () {
         for (i=0; i<num; i++) {
             obex_intf = OBEX_GetInterfaceByIndex(handle, i);
             if (obex_intf->usb.idVendor == 0x1cfb &&
-                obex_intf->usb.idProduct == 0x1020)
+                (obex_intf->usb.idProduct == 0x1020 || obex_intf->usb.idProduct == 0x1030))
             {
                 printf("Found Livescribe Pulse pen\n");
                 break;
