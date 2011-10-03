@@ -19,7 +19,7 @@ cdef extern from "stdio.h":
 
 cdef class Smartpen:
     cdef obex_t *obex
-    def __new__(self):
+    def __cinit__(self):
         self.obex = NULL
 
     def connect(self, vendor=0x1cfb, product=0x1030):
