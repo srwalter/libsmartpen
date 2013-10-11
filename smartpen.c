@@ -71,7 +71,7 @@ static void obex_event (obex_t *hdl, obex_object_t *obj, int mode,
 		hd.bq4 = state->connid;
 		size = 4;
 		rc = OBEX_ObjectAddHeader(hdl, obj, OBEX_HDR_CONNECTION,
-					  hd, size, OBEX_FL_FIT_ONE_PACKET);
+					  hd, size, 0);
 		if (rc < 0) {
 			printf("oah fail %d\n", rc);
 		}
