@@ -195,6 +195,7 @@ class STFParser(object):
 
                 xa=0
                 ya=0
+                sample_in_stroke = 0
                 while True:
                     header = self.get_header()
                     if header==0 or header==1:
@@ -213,6 +214,8 @@ class STFParser(object):
                     if time==0:
                         self.handle_stroke_end(time)
                         break
+                    sample_in_stroke += time
+                    point_time = start_time + sample_in_stroke * 1000 // self.speed
 
                     do_delta = True
                     if header > 0:
@@ -244,7 +247,7 @@ class STFParser(object):
                     ya *= 256 / time
                     f0 += deltaf 
 
-                    self.handle_point(x0, y0, f0, start_time)
+                    self.handle_point(x0, y0, f0, point_time)
                     pass
             except Exception, e:
                 print e
