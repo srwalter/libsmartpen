@@ -1,3 +1,9 @@
+libsmartpen (0.6-3) trusty; urgency=low
+
+  * Update for trusty
+
+ -- Steven Walter <stevenrwalter@gmail.com>  Fri, 25 Apr 2014 21:49:45 -0500
+
 libsmartpen (0.6-2) natty; urgency=low
 
   * Require openobex from my PPA
