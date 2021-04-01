@@ -154,9 +154,10 @@ again:
 	if (!handle)
 		goto out;
 
-        num = OBEX_FindInterfaces(handle, &obex_intf);
+        num = OBEX_EnumerateInterfaces(handle);
 	for (i=0; i<num; i++) {
-		if (!strcmp(obex_intf[i].usb.manufacturer, "Livescribe"))
+		obex_intf = OBEX_GetInterfaceByIndex(handle, i);
+		if (!strcmp(obex_intf->usb.manufacturer, "Livescribe"))
 			break;
 	}
 
@@ -178,7 +179,7 @@ again:
 		goto out;
 	}
 
-        rc = OBEX_InterfaceConnect(handle, &obex_intf[i]);
+        rc = OBEX_InterfaceConnect(handle, obex_intf);
         if (rc < 0) {
 		printf("Connect failed %d\n", rc);
 		handle = NULL;

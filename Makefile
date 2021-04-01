@@ -1,5 +1,5 @@
 # vim: set noet sw=8 :
-LOCAL_CFLAGS=-Wall -fPIC `pkg-config --cflags python glib-2.0 openobex libusb-1.0` -g
+LOCAL_CFLAGS=-Wall -fPIC `pkg-config --cflags glib-2.0 openobex libusb-1.0` -g
 
 export PKG_CONFIG_PATH=$(HOME)/sandboxes/openobex/lib/pkgconfig
 
